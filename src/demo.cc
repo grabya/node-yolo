@@ -274,23 +274,27 @@ void start_demo(InputOptions opts, const typename Nan::AsyncProgressWorkerBase<W
 
 WorkerData* start_image_demo(InputOptions opts) {
     list *options = read_data_cfg(opts.datafile);
-    char classesParam[] = "classes";
-    char namesParam[] = "names";
-    char defaultNamesList[] = "data/names.list";
-    int classes = option_find_int(options, classesParam, 20);
-    char *name_list = option_find_str(options, namesParam, defaultNamesList);
-    char **names = get_labels(name_list);
+
+    if (!demo_classes) { 
+        char classesParam[] = "classes";
+        char namesParam[] = "names";
+        char defaultNamesList[] = "data/names.list";
+        int classes = option_find_int(options, classesParam, 20);
+        char *name_list = option_find_str(options, namesParam, defaultNamesList);
+        char **names = get_labels(name_list);
+
+        image **alphabet = load_alphabet();
+        demo_names = names;
+        demo_alphabet = alphabet;
+        demo_classes = classes;
+        net = parse_network_cfg(opts.cfgfile);
+        load_weights(&net, opts.weightfile);
+        set_batch_network(&net, 1);
+    }
+
     int j;
     float thresh = opts.thresh;
     float hier_thresh = opts.hierThresh;
-
-    image **alphabet = load_alphabet();
-    demo_names = names;
-    demo_alphabet = alphabet;
-    demo_classes = classes;
-    net = parse_network_cfg(opts.cfgfile);
-    load_weights(&net, opts.weightfile);
-    set_batch_network(&net, 1);
 
     char * input = opts.imagefile;
     float nms=.4;
@@ -319,7 +323,7 @@ WorkerData* start_image_demo(InputOptions opts) {
     image original = im;
     image original_copy = copy_image(original);
 
-    draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, 0, names, alphabet, l.classes);
+    draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, 0, demo_names, demo_alphabet, l.classes);
     capture_detections(l.w*l.h*l.n, demo_thresh, boxes, probs, demo_names, demo_alphabet, demo_classes);
 
     image modified = im;
